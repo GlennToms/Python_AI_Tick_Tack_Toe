@@ -3,6 +3,9 @@
     "cSpell.words": [
         "dtype",
         "fliplr",
-        "numpy"
+        "numpy",
+        "openai",
+        "relu",
+        "tflearn"
     ]
 }
