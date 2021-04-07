@@ -15,7 +15,7 @@ class Game:
     def place(self, col: int, row: int) -> bool:
         """Returns True placement was acceptable"""
         self.state = np.array(self.state, dtype=object)
-        char = "y"
+        char = "o"
         if self.player:
             char = "x"
 
@@ -39,7 +39,7 @@ class Game:
             elif won is True:
                 if self.show_only_end:
                     self.print()
-                char = "y"
+                char = "o"
                 if self.player:
                     char = "x"
                 print(f"'{char}' has won!")
