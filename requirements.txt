@@ -1,0 +1,7 @@
+tensorflow
+numpy
+
+# dev
+mypy
+black
+pycodestyle

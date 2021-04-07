@@ -1,0 +1,18 @@
+{
+	"name": "AI",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": "..",
+	},
+	"workspaceFolder": "/app",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind,consistency=delegated",
+	"extensions": [
+		"ms-python.python",
+		"coenraads.bracket-pair-colorizer-2",
+		"streetsidesoftware.code-spell-checker",
+		"oderwat.indent-rainbow",
+		"esbenp.prettier-vscode",
+		"gruntfuggly.todo-tree",
+		"ms-python.vscode-pylance",
+	]
+}
