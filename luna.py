@@ -248,7 +248,7 @@ class DQN:
 
     """ Implementation of deep q learning algorithm """
 
-    def __init__(self, action_space, state_space):
+    def __init__(self, action_space, state_space, loaded_model=False):
 
         self.action_space = action_space
         self.state_space = state_space
@@ -259,7 +259,7 @@ class DQN:
         self.lr = 0.001
         self.epsilon_decay = 0.996
         self.memory = deque(maxlen=1000000)
-        self.model = self.build_model()
+        self.model = self.build_model() if loaded_model is False else loaded_model
 
     def build_model(self):
 
@@ -285,7 +285,7 @@ class DQN:
         act_values = self.model.predict(state)
         return np.argmax(act_values[0])
 
-    def replay(self):
+    def replay(self, save=False):
 
         if len(self.memory) < self.batch_size:
             return
@@ -307,20 +307,23 @@ class DQN:
         targets_full[[ind], [actions]] = targets
 
         self.model.fit(states, targets_full, epochs=1, verbose=0)
-        # import time
 
-        # timestr = time.strftime("%Y%m%d-%H%M%S")
+        if save:
+            import time
 
-        # self.model.save(timestr)
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            self.model.save(timestr)
+
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
 
-def train_dqn(episode):
+def train_dqn(episode, loaded_model=False):
     loss = []
     winners = []
-    agent = DQN(env.action_space, 9)
+    agent = DQN(env.action_space, 9, loaded_model=loaded_model)
     max_steps = 50
+    SAVE_EVERY = 1000
     for e in range(episode):
         state = env.reset()
         state = np.reshape(state, (1, len(state)))
@@ -335,9 +338,12 @@ def train_dqn(episode):
             agent.remember(state, action, reward, next_state, done)
             state = next_state
             if last_action == action:
-                print(last_action, action)
+                print(last_action)
             last_action = action
-            agent.replay()
+            if (e % SAVE_EVERY) == 0:
+                agent.replay(save=True)
+            else:
+                agent.replay()
             steps += 1
             if done:
                 print(f"episode: {e}/{episode}, Steps: {steps}, Score: {score} ")
@@ -349,13 +355,13 @@ def train_dqn(episode):
     return loss, winners
 
 
-def trainer():
+def trainer(model=False):
     import time
 
     start_time = time.time()
 
-    episodes = 2000
-    loss, winners = train_dqn(episodes)
+    episodes = 100_000
+    loss, winners = train_dqn(episodes, model)
 
     print(f"Winners: {Counter(winners)}")
     plt.plot([i + 1 for i in range(0, episodes, 2)], loss[::2])
@@ -371,9 +377,10 @@ def play():
     while env:
         action = np.argmax(model.predict(np.reshape(state, (1, len(state)))))
         state, reward, done, info = env.step1(action)
-        # print(action)
+        if done:
+            env.reset()
 
 
 if __name__ == "__main__":
-    # trainer()
-    play()
+    trainer(keras.models.load_model("tic-2"))
+    # play()
