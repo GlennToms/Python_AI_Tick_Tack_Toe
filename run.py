@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import tflearn
+import tensorflow as tf
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.estimator import regression
 from statistics import median, mean
@@ -8,9 +9,9 @@ from collections import Counter
 
 
 LR = 1e-3
-goal_steps = 500
-score_requirement = 5
-initial_games = 10000
+goal_steps = 25
+score_requirement = 4
+initial_games = 2_000
 
 
 class Game:
@@ -31,7 +32,19 @@ class Game:
         self.player = True
 
     def flat_state(self):
-        return [y for x in self.state for y in x]
+        all_values = [y for x in self.state for y in x]
+        converted = []
+        for index, x in enumerate(all_values):
+            if x == "x":
+                converted.append(2)
+            elif x == "o":
+                converted.append(1)
+            else:
+                converted.append(0)
+        return np.array(converted)
+
+    def step1(self, pos: int):
+        return self.step(pos - 1)
 
     def step(self, pos: int):
         pos = pos + 1
@@ -52,11 +65,12 @@ class Game:
         observation = self.flat_state()
         done = self.game_over
         if done and self.winner:
-            reward + 1
+            # reward = 10 - len([x for x in observation if x is None])
+            reward = 500
         elif done and self.winner is None:
             reward = 0
         elif done and self.winner is False:
-            reward = -1
+            reward = -10 - len([x for x in observation if x is None])
         info = None
 
         return (observation, reward, done, info)
@@ -173,7 +187,7 @@ class Game:
         return not self.game_over
 
 
-game: Game = None
+game = Game(3, 3, show_only_end=True, render=True)
 
 
 def initial_population():
@@ -184,7 +198,8 @@ def initial_population():
     # just the scores that met our threshold:
     accepted_scores = []
     # iterate through however many games we want:
-    for _ in range(initial_games):
+    for i in range(initial_games):
+        print(f"Game: {initial_games - i}")
         score = 0
         # moves specifically from this environment:
         game_memory = []
@@ -256,14 +271,71 @@ def initial_population():
     return training_data
 
 
-if __name__ == "__main__":
-    # game = Game(rows=3, cols=3, auto_reset=True, show_only_end=False)
-    # while game:
-    #     observation, reward, done, info = game.step(random.randrange(0, game.rows), random.randrange(0, game.cols))
-    # print("Gamed has Ended")
-    pass
+def neural_network_model(input_size):
+
+    network = input_data(shape=[None, input_size, 1], name="input")
+
+    network = fully_connected(network, 128, activation="relu")
+    # network = dropout(network, 0.8)
+
+    network = fully_connected(network, 256, activation="relu")
+    network = dropout(network, 0.8)
+
+    # network = fully_connected(network, 512, activation="relu")
+    # network = dropout(network, 0.8)
+
+    # network = fully_connected(network, 256, activation="relu")
+    # network = dropout(network, 0.8)
+
+    # network = fully_connected(network, 128, activation="relu")
+    # network = dropout(network, 0.8)
+
+    network = fully_connected(network, 9, activation="softmax")
+    network = regression(network, optimizer="adam", learning_rate=LR, loss="categorical_crossentropy", name="targets")
+    model = tflearn.DNN(network, tensorboard_dir="log")
+
+    return model
 
 
-game = Game(3, 3, show_only_end=True)
+def train_model(training_data, model=False):
+
+    X = np.array([i[0] for i in training_data], dtype=np.float).reshape(-1, len(training_data[0][0]), 1)
+    y = [i[1] for i in training_data]
+
+    if not model:
+        model = neural_network_model(input_size=len(X[0]))
+
+    model.fit({"input": X}, {"targets": y}, n_epoch=3, snapshot_step=500, show_metric=True, run_id="tic-tac-toe")
+    return model
+
+
 training_data = initial_population()
-print("DONE")
+model = train_model(training_data)
+scores = []
+choices = []
+for _ in range(5):
+    print("Starting New Game")
+    score = 0
+    game_memory = []
+    prev_obs = []
+    game.reset()
+    for _ in range(goal_steps):
+        if len(prev_obs) == 0:
+            action = random.randrange(0, 8)
+        else:
+            action = int(np.argmax(model.predict(prev_obs.reshape(-1, len(prev_obs), 1))[0]))
+            choices.append(action)
+        print(action)
+
+        new_observation, reward, done, info = game.step1(action)
+        prev_obs = new_observation
+        game_memory.append([new_observation, action])
+        score += reward
+        if done:
+            break
+
+    scores.append(score)
+
+print("Average Score:", sum(scores) / len(scores))
+print(f"Scores: {Counter(scores)}")
+print(f"Actions: {Counter(choices)}")

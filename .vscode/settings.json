@@ -1,10 +1,15 @@
 {
     "python.formatting.provider": "black",
     "cSpell.words": [
+        "amax",
+        "deque",
+        "dones",
         "dtype",
         "fliplr",
+        "keras",
         "numpy",
         "openai",
+        "pyplot",
         "relu",
         "tflearn"
     ]

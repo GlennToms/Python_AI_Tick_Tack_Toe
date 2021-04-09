@@ -1,5 +1,6 @@
 tensorflow
-tflearn
+keras
+tf-agents
 gym
 numpy
 
