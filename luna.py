@@ -237,7 +237,7 @@ class Game:
         return not self.game_over
 
 
-env = Game(3, 3, show_only_end=False, render=False)
+env = Game(3, 3, show_only_end=True, render=True)
 env.action_space = 9
 # env = gym.make("LunarLander-v2")
 # env.seed(0)
@@ -336,7 +336,14 @@ def train_dqn(episode, loaded_model=False):
             score += reward
             next_state = np.reshape(next_state, (1, 9))
             agent.remember(state, action, reward, next_state, done)
+            if str(list(next_state)) == str(list(state)):
+                break
             state = next_state
+
+            other_player = np.reshape(next_state, (1, 9))
+            other_action = agent.act(other_player)
+            _, _, _, _ = env.step1(other_action)
+
             if last_action == action:
                 print(last_action)
             last_action = action
@@ -360,18 +367,18 @@ def trainer(model=False):
 
     start_time = time.time()
 
-    episodes = 100_000
+    episodes = 5000
     loss, winners = train_dqn(episodes, model)
 
     print(f"Winners: {Counter(winners)}")
-    plt.plot([i + 1 for i in range(0, episodes, 2)], loss[::2])
-    # plt.show()
-    plt.savefig("tic-tac-toe.png")
     print("--- %s seconds ---" % (time.time() - start_time))
+    plt.plot([i + 1 for i in range(0, episodes, 2)], loss[::2])
+    plt.savefig("tic-tac-toe.png")
+    plt.show()
 
 
 def play():
-    model = keras.models.load_model("tic-2")
+    model = keras.models.load_model("20210409-181635")
     env = Game(rows=3, cols=3, render=True, human=True)
     state = env.reset()
     while env:
@@ -382,5 +389,6 @@ def play():
 
 
 if __name__ == "__main__":
-    trainer(keras.models.load_model("tic-2"))
+    # trainer(keras.models.load_model("tic-2"))
+    trainer()
     # play()
