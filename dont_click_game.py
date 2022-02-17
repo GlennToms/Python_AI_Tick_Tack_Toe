@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from collections import Counter
+from datetime import datetime
 
 import numpy as np
 from tensorflow.keras.models import Sequential
@@ -84,17 +85,6 @@ class Game:
         print(line)
         print("-" * len(line))
 
-    def check_if_game_over(self) -> bool:
-        """returns True if game is over"""
-        # Check for free spaces
-        if len([y for x in self.state for y in x if y is None]) > 0:
-            return False
-
-        # Check if no free spaces left
-        if len([y for x in self.state for y in x if y is not None]) > 0:
-            self.done = True
-            return True
-
     def __repr__(self):
         return str(self.rows * self.cols)
 
@@ -149,9 +139,7 @@ print(sorted(Counter(scores.history["episode_reward"]).items()))
 print("")
 # _ = dqn.test(env, nb_episodes=15, visualize=True)
 
-from datetime import datetime
 
 d = datetime.now()
 
-dqn.save_weights(f"game.h5f", overwrite=True)
-dqn.save_weights(f"dont_click_game_{d.year}-{d.month}-{d.day}.h5f", overwrite=True)
+dqn.save_weights(f"dont_click_game_{d.year}-{d.month}-{d.day}--{d.hour}-{d.minute}.h5f", overwrite=True)
