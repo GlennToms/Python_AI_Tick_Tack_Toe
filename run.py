@@ -11,7 +11,9 @@ from collections import Counter
 LR = 1e-3
 goal_steps = 25
 score_requirement = 4
-initial_games = 2_000
+initial_games = 100_000
+WINS = 0
+NOT_WINS = 0
 
 
 class Game:
@@ -62,13 +64,19 @@ class Game:
         reward = 1 if placed_okay else -1
         if placed_okay:
             self.place(random.randrange(0, self.rows), random.randrange(0, self.cols))
+        else:
+            return (self.flat_state(), 0, True, None)
         observation = self.flat_state()
         done = self.game_over
         if done and self.winner is True:
             reward = Counter(observation)[2] + 2
+            global WINS
+            WINS = WINS + 1
         # This checks for loss and Draw conditions
         elif done and self.winner is not True:
             reward = 0
+            global NOT_WINS
+            NOT_WINS = NOT_WINS + 1
         info = None
 
         return (observation, reward, done, info)
@@ -303,7 +311,7 @@ def train_model(training_data, model=False):
     if not model:
         model = neural_network_model(input_size=len(X[0]))
 
-    model.fit({"input": X}, {"targets": y}, n_epoch=3, snapshot_step=500, show_metric=True, run_id="tic-tac-toe")
+    model.fit({"input": X}, {"targets": y}, n_epoch=5, snapshot_step=500, show_metric=True, run_id="tic-tac-toe")
     return model
 
 
@@ -311,8 +319,9 @@ training_data = initial_population()
 model = train_model(training_data)
 scores = []
 choices = []
-for _ in range(5):
-    print("Starting New Game")
+for _ in range(10_000):
+    # print("Starting New Game")
+    print(f"WINS: {WINS}, NOT_WINS: {NOT_WINS}, GAMES:{WINS + NOT_WINS}")
     score = 0
     game_memory = []
     prev_obs = []
@@ -323,7 +332,7 @@ for _ in range(5):
         else:
             action = int(np.argmax(model.predict(prev_obs.reshape(-1, len(prev_obs), 1))[0]))
             choices.append(action)
-        print(action)
+        # print(action)
 
         new_observation, reward, done, info = game.step1(action)
         prev_obs = new_observation

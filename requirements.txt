@@ -1,7 +1,6 @@
 tensorflow
 keras
-tf-agents
-gym
+keras-rl2
 numpy
 
 # dev
