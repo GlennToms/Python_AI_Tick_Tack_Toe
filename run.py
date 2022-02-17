@@ -34,7 +34,7 @@ class Game:
     def flat_state(self):
         all_values = [y for x in self.state for y in x]
         converted = []
-        for index, x in enumerate(all_values):
+        for _, x in enumerate(all_values):
             if x == "x":
                 converted.append(2)
             elif x == "o":
@@ -64,13 +64,11 @@ class Game:
             self.place(random.randrange(0, self.rows), random.randrange(0, self.cols))
         observation = self.flat_state()
         done = self.game_over
-        if done and self.winner:
-            # reward = 10 - len([x for x in observation if x is None])
-            reward = 500
-        elif done and self.winner is None:
+        if done and self.winner is True:
+            reward = Counter(observation)[2] + 2
+        # This checks for loss and Draw conditions
+        elif done and self.winner is not True:
             reward = 0
-        elif done and self.winner is False:
-            reward = -10 - len([x for x in observation if x is None])
         info = None
 
         return (observation, reward, done, info)
@@ -97,7 +95,7 @@ class Game:
                         self.print()
                 if self.render:
                     print(f"Game is a Draw!")
-                self.winner = None
+                self.winner = -1
                 self.game_over = True
                 if self.auto_reset:
                     self.state = np.full(shape=(self.rows, self.cols), fill_value=None)
@@ -108,10 +106,10 @@ class Game:
                 if self.show_only_end:
                     if self.render:
                         self.print()
-                char = "o"
+                char = "Random"
+                self.winner = self.player
                 if self.player:
-                    self.winner = self.player
-                    char = "x"
+                    char = "AI"
                 if self.render:
                     print(f"'{char}' has won!")
                 self.game_over = True
@@ -187,7 +185,7 @@ class Game:
         return not self.game_over
 
 
-game = Game(3, 3, show_only_end=True, render=True)
+game = Game(3, 3, show_only_end=False, render=False)
 
 
 def initial_population():

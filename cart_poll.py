@@ -124,7 +124,7 @@ def random_policy(episode, step):
 
 if __name__ == "__main__":
 
-    ep = 100
+    ep = 5
     loss = train_dqn(ep)
     plt.plot([i + 1 for i in range(0, ep, 2)], loss[::2])
     plt.savefig("cart.png")
